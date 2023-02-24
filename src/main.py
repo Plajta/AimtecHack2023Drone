@@ -11,10 +11,9 @@ mp_face_mesh = mp.solutions.face_mesh
 face_landmarks_lower = [78, 95, 88, 178, 87, 14, 317, 405, 318, 324, 308]
 face_landmarks_upper = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308]
 
-def DrawSmile(arr_y, arr_x, col, img_shape):
-    if (np.all(arr_x) > img_shape[0]) == False or (np.all(arr_y) > img_shape[1]) == False:
-        for i in range(arr_x.shape[0]):
-            cv2.circle(blank, (arr_x[i], arr_y[i]), radius=0, color=col, thickness=3)
+def DrawSmile(arr_y, arr_x, col):
+    for i in range(arr_x.shape[0]):
+        cv2.circle(blank, (arr_x[i], arr_y[i]), radius=0, color=col, thickness=3)
 
 def JawComputations(jaw_arr):
 
@@ -46,7 +45,9 @@ def JawComputations(jaw_arr):
     return out_y.astype("uint32"), out_x.astype("uint32")
 
 
-# For webcam input:
+#variables:
+roi_size = 160
+
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 cap = cv2.VideoCapture(0)
 with mp_face_mesh.FaceMesh(
@@ -66,6 +67,7 @@ with mp_face_mesh.FaceMesh(
 
         h, w, c = image.shape
         blank = np.zeros((h, w, c))
+        ROI = np.zeros((roi_size, roi_size, c))
 
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
@@ -134,14 +136,46 @@ with mp_face_mesh.FaceMesh(
 
                 out_y_low, out_x_low = JawComputations(jaw_low)
                 out_y_up, out_x_up = JawComputations(jaw_up)
+
+                if ((np.all(out_x_up) > h) == False or (np.all(out_y_up) > w) == False): #check if smile is in frame (poly1d not goin to converge)
                 
-                DrawSmile(out_y_low, out_x_low, (0, 0, 255), (h, w))
-                DrawSmile(out_y_up, out_x_up, (255, 0, 0), (h, w))
-                
+                    #
+                    # DRAW THAT SMILE
+                    #
+                    DrawSmile(out_y_low, out_x_low, (0, 0, 255))
+                    DrawSmile(out_y_up, out_x_up, (0, 0, 255))
+
+                    #
+                    # DEGRADE SMILE TO 8x8 MATRIX (actual size should be 6x3)
+                    #
+                    
+                    #borders of ROI
+                    top_x = np.amin(out_x_up) - 5
+                    top_y = np.amin(out_y_up) - 5
+                    bot_x = np.amax(out_x_low) + 5
+                    bot_y = np.amax(out_y_low) + 5
+
+                    roi_h = bot_y-top_y
+                    roi_w = bot_x-top_x
+                    
+                    #transform ROI into 120x120 full ROI
+                    #ROI_propose = cv2.resize(blank[top_y:bot_y, top_x:bot_x], (roi_w, roi_h))
+                    #ROI[pad_y:roi_h+pad_y, pad_x:roi_w+pad_x] = ROI_propose
+
+                    scale_y_to_x = roi_h / roi_w
+                    if scale_y_to_x > 1:
+                        scale_y_to_x = 1
+
+                    ROI_propose = cv2.resize(blank[top_y:bot_y, top_x:bot_x], (roi_size, int(roi_size * scale_y_to_x)))
+
+                    pad_y = int((roi_size - ROI_propose.shape[0]) / 2)
+
+                    ROI[pad_y:ROI_propose.shape[0]+pad_y, :] = ROI_propose
                     
         # Flip the image horizontally for a selfie-view display.
         cv2.imshow('MediaPipe Face Mesh', image)
-        cv2.imshow('Smile approx', blank)
+        #cv2.imshow('Smile approx', blank)
+        cv2.imshow("Smile ROI", ROI)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
