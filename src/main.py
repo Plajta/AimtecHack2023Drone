@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import math
+import os
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -178,5 +179,16 @@ with mp_face_mesh.FaceMesh(
         cv2.imshow("Smile ROI", ROI)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
+        elif cv2.waitKey(33) == ord('a'):
+            count = 0
+            for path in os.listdir(os.getcwd() + "/data/"):
+                # check if current path is a file
+                if os.path.isfile(os.path.join(os.getcwd() + "/data/", path)):
+                    count += 1
+
+            print(count)
+            cv2.imwrite(os.getcwd() + "/data/" + str(count+1) + ".png", ROI)
+            print("saved!")
 
 cap.release()
