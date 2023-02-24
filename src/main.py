@@ -11,6 +11,11 @@ mp_face_mesh = mp.solutions.face_mesh
 face_landmarks_lower = [78, 95, 88, 178, 87, 14, 317, 405, 318, 324, 308]
 face_landmarks_upper = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308]
 
+def DrawSmile(arr_y, arr_x, col, img_shape):
+    if (np.all(arr_x) > img_shape[0]) == False or (np.all(arr_y) > img_shape[1]) == False:
+        for i in range(arr_x.shape[0]):
+            cv2.circle(blank, (arr_x[i], arr_y[i]), radius=0, color=col, thickness=3)
+
 def JawComputations(jaw_arr):
 
     jaw_arr_y = jaw_arr[:, 0]
@@ -23,8 +28,8 @@ def JawComputations(jaw_arr):
     x_max = np.amax(jaw_arr_x)
 
     #normalize data
-    jaw_arr_y = jaw_arr_y - y_min
-    jaw_arr_x = jaw_arr_x - x_min
+    jaw_arr_y = jaw_arr_y - (y_min - 1)
+    jaw_arr_x = jaw_arr_x - (x_min - 1)
 
     #fit polynomial model
     poly_model = np.poly1d(np.polyfit(jaw_arr_x, jaw_arr_y, 3))
@@ -38,7 +43,7 @@ def JawComputations(jaw_arr):
     out_x = space + x_min
     out_y = y_space + y_min
 
-    return out_y, out_x
+    return out_y.astype("uint32"), out_x.astype("uint32")
 
 
 # For webcam input:
@@ -52,12 +57,15 @@ with mp_face_mesh.FaceMesh(
 
     while cap.isOpened():
         success, image = cap.read()
+        image = cv2.flip(image, 1)
+
         if not success:
             print("Ignoring empty camera frame.")
             # If loading a video, use 'break' instead of 'continue'.
             continue
 
         h, w, c = image.shape
+        blank = np.zeros((h, w, c))
 
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
@@ -115,8 +123,8 @@ with mp_face_mesh.FaceMesh(
 
                 #upper line
                 for i, i_up in enumerate(face_landmarks_upper):
-                    X = face_landmarks.landmark[i_low].x
-                    Y = face_landmarks.landmark[i_low].y
+                    X = face_landmarks.landmark[i_up].x
+                    Y = face_landmarks.landmark[i_up].y
 
                     X = math.floor(X * w)
                     Y = math.floor(Y * h)
@@ -125,19 +133,15 @@ with mp_face_mesh.FaceMesh(
                     jaw_up[i, 1] = X
 
                 out_y_low, out_x_low = JawComputations(jaw_low)
-                out_y_up, out_y_up = JawComputations(jaw_up)
-
-                #JawComputations(jaw_low)
-
-                """
-                for i in range(out_x_low.shape[0]):
-                    cv2.circle(image, (out_x_low[i], out_y_low[i]), radius=0, color=(0, 0, 255), thickness=-1)
-                for i in range(out_y_low.shape[0]):
-                    cv2.circle(image, (out_x_low[i], out_y_low[i]), radius=0, color=(0, 0, 255), thickness=-1)
-                """
+                out_y_up, out_x_up = JawComputations(jaw_up)
+                
+                DrawSmile(out_y_low, out_x_low, (0, 0, 255), (h, w))
+                DrawSmile(out_y_up, out_x_up, (255, 0, 0), (h, w))
+                
                     
         # Flip the image horizontally for a selfie-view display.
-        cv2.imshow('MediaPipe Face Mesh', cv2.flip(image, 1))
+        cv2.imshow('MediaPipe Face Mesh', image)
+        cv2.imshow('Smile approx', blank)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
