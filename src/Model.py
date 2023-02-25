@@ -9,13 +9,13 @@ import torch.optim as optim
 from torchsummary import summary
 
 device = "cpu"
-log_interval = 10
+log_interval = 1
 
 class SmileNet(nn.Module):
     sweep_configuration = {
         'method': 'random',
         'name': 'sweep',
-        'metric': {'goal': 'maximize', 'name': 'epoch/val_accuracy'},
+        'metric': {'goal': 'maximize', 'name': 'val_accuracy'},
         'parameters': 
         {
             'batch_size': {'values': [16, 32, 64]},
@@ -43,7 +43,6 @@ class SmileNet(nn.Module):
         "lr": 1e-4,
         "metric": "accuracy",
         "epochs": 7
-
     }
 
     def __init__(self):
@@ -74,9 +73,9 @@ class SmileNet(nn.Module):
 
         return pred
 
-    def Train(self, train):
+    def Train(self, epoch, train, wandb):
         self.model.train()
-        for batch_idx, (data, target) in enumerate(train):
+        for idx, (data, target) in enumerate(train):
             correct = 0
 
             self.optimizer.zero_grad()
@@ -87,6 +86,18 @@ class SmileNet(nn.Module):
 
             pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).sum()
+
+            if idx % log_interval == 0:
+                train_loss = loss.item()
+                train_accuracy = 100. * correct / len(train.dataset)
+
+                #reset counter
+                correct = 0
+
+                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, idx * len(data), len(train.dataset), 100. * idx / len(train), train_loss))
+
+                #log to wandb
+                wandb.log({"accuracy": train_accuracy, "loss": train_loss})
 
     def Test(self, test):
         self.model.eval()
@@ -105,3 +116,26 @@ class SmileNet(nn.Module):
         test_accuracy = 100. * correct / len(test.dataset)
 
         return test_loss, test_accuracy
+    
+    def Table_validate(self, test_loader, wandb, indexes = None):
+        if isinstance(indexes, list):
+            test_features, test_labels = next(iter(test_loader))
+            print(f"Feature batch shape: {test_features.size()}")
+            print(f"Labels batch shape: {test_labels.size()}")
+
+            data = []
+
+            for i in indexes:
+                img = test_features[i].squeeze()
+                label = test_labels[i]
+
+                output = self.model(test_features[i]) #detect
+                pred = int(output.data.max(1, keepdim=True)[1][0][0].tolist())
+                print(pred)
+
+                data.append([wandb.Image(img), pred, label])
+            
+            columns=["image", "prediction", "truth"]
+            table = wandb.Table(data=data, columns=columns)
+
+            wandb.log({"table": table})
