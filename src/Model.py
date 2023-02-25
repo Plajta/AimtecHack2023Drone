@@ -47,14 +47,14 @@ class SmileNet(nn.Module):
     }
 
     def __init__(self):
-        super(SmileNet).__init__()
+        super(SmileNet, self).__init__()
 
         self.Conv1 = nn.Conv2d(3, 16, 3)
         self.Pool1 = nn.MaxPool2d(2)
         self.Conv2 = nn.Conv2d(16, 32, 3)
         self.Pool2 = nn.MaxPool2d(2)
 
-        self.layer1 = nn.Linear(128, 64)
+        self.layer1 = nn.Linear(38, 64)
         self.layer2 = nn.Linear(64, 7)
 
     def Model_init(self):
@@ -69,10 +69,35 @@ class SmileNet(nn.Module):
         x = F.relu(self.Pool2(x))
 
         x = F.relu(self.layer1(x))
-        pred = F.softmax(self.layer2(x))
+        pred = F.log_softmax(self.layer2(x))
 
         return pred
 
-    def Train(self):
+    def Train(self, train):
         self.model.train()
-        #TODO: dodělat
+        for batch_idx, (data, target) in enumerate(train):
+            correct = 0
+
+            self.optimizer.zero_grad()
+            output = self.model(data)
+            loss = F.nll_loss(output, target)
+            loss.backward()
+            self.optimizer.step()
+
+            pred = output.data.max(1, keepdim=True)[1]
+            correct += pred.eq(target.data.view_as(pred)).sum()
+
+    def Test(self, test):
+        self.model.eval()
+        correct = 0
+        test_loss = 0
+
+        with torch.no_grad():
+            for data, target in test:
+                output = self.model(data)
+                test_loss += F.nll_loss(output, target, size_average=False).item()
+                pred = output.data.max(1, keepdim=True)[1]
+                correct += pred.eq(target.data.view_as(pred)).sum()
+
+        test_loss /= len(test.dataset)
+        test_accuracy = 100. * correct / len(test.dataset)
