@@ -1,5 +1,3 @@
-import torch
-import torchsummary
 import Wandb
 
 import Model
@@ -27,4 +25,6 @@ def RunSMILENet():
     Wandb.End()
 
 #actual Run
-Wandb.InitSweep(model.sweep_configuration, "SMILENet", RunSMILENet)
+#Wandb.InitSweep(model.sweep_configuration, "SMILENet", RunSMILENet)
+
+RunSMILENet()

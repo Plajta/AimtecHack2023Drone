@@ -10,8 +10,6 @@ import albumentations as A
 import numpy as np
 import torch
 
-#just little stupid and simple script to load training and testing images to the algorithm
-
 class SmileDataset(Dataset):
     def __init__(self, train_or_test):
         self.train_or_test = train_or_test
@@ -52,15 +50,17 @@ class SmileDataset(Dataset):
             for i, path in enumerate(os.listdir(abs_path_train)):
 
                 if os.path.isfile(os.path.join(abs_path_train, path)):
-                    #train and test reading i kinda weird (index read is kinda weird), at least
-                    # i dont have to worry about dataset shuffle
-                    #index = path.replace("train.png", "")
 
                     Train_img = cv2.imread(abs_path_train + "/" + path)
                     Train_img = Convert_To_Tensor(Train_img)
+
+                    #Augment 1 training image to 7 images (total train images = 30*7=210)
+                    #list of augmentations: Resize (3 imgs), Rotate (3 imgs), Horizontal Flip (1 imgs)
                     
-                    self.Train_X.append(Train_img)
-                    self.Train_y.append(labels_train[str(i)])
+                    Augmented_imgs, Augmented_labels = Augment_img(Train_img, labels_train[str(i)])
+                    
+                    self.Train_X.extend(Augmented_imgs)
+                    self.Train_X.extend(Augmented_labels)
 
             self.Train_y = F.one_hot(torch.tensor(self.Train_y, dtype=torch.int64), 5)
 
@@ -69,14 +69,17 @@ class SmileDataset(Dataset):
             for i, path in enumerate(os.listdir(abs_path_test)):
                 
                 if os.path.isfile(os.path.join(abs_path_test, path)):
-                    #train and test reading i kinda weird (index read is kinda weird), at least
-                    # i dont have to worry about dataset shuffle
 
                     Test_img = cv2.imread(abs_path_test + "/" + path)
                     Test_img = Convert_To_Tensor(Test_img)
 
-                    self.Test_X.append(Test_img)
-                    self.Test_y.append(labels_test[str(i)])
+                    #Augment 1 testing image to 7 images (total test images = 20*7=140)
+                    #list of augmentations: Resize (3 imgs), Rotate (3 imgs), Horizontal Flip (1 imgs)
+
+                    Augmented_imgs, Augmented_labels = Augment_img(Test_img, labels_test[str(i)])
+                    
+                    self.Test_X.extend(Augmented_imgs)
+                    self.Test_y.extend(Augmented_labels)
 
             self.Test_y = F.one_hot(torch.tensor(self.Test_y, dtype=torch.int64), 5)
 
@@ -107,11 +110,32 @@ def Load_Dataset():
     test = SmileDataset(train_or_test=False)
 
     train_loader = DataLoader(
-        train, batch_size=1, shuffle=False
+        train, batch_size=1, shuffle=True #dataset shuffle
     )
 
     test_loader = DataLoader(
-        test, batch_size=1, shuffle=False
+        test, batch_size=1, shuffle=True #dataset shuffle
     )
     
+    print(len(train_loader))
     return train_loader, test_loader
+
+def Augment_img(Train_img, label):
+    Augmented_imgs = []
+    Augmented_labels = [label] * 8
+
+    for i in range(3):
+        resize = random.randint(40, 120)
+        Resize_transform = transforms.Resize(size=(resize, resize))
+        Augmented_imgs.append(Resize_transform(Train_img))
+
+    for i in range(3):
+        rotate = random.randint(45, 125)
+        Rotate_transform = transforms.RandomRotation(rotate)
+        Augmented_imgs.append(Rotate_transform(Train_img))
+
+    Flip_transform = transforms.RandomHorizontalFlip(1)
+    Augmented_imgs.append(Flip_transform(Train_img))
+    Augmented_imgs.append(Train_img) #append original image
+
+    return Augmented_imgs, Augmented_labels

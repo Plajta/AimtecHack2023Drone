@@ -42,7 +42,7 @@ class SmileNet(nn.Module):
         "loss": "categorical_crossentropy",
         "lr": 1e-4,
         "metric": "accuracy",
-        "epochs": 7
+        "epochs": 20
     }
 
     def __init__(self):
@@ -69,7 +69,7 @@ class SmileNet(nn.Module):
 
         x = flatten(x, 1)
         x = F.relu(self.layer1(x))
-        pred = F.softmax(self.layer2(x))
+        pred = F.log_softmax(self.layer2(x))
 
         return pred
 
