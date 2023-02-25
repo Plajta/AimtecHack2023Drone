@@ -9,7 +9,7 @@ import torch.optim as optim
 from torchsummary import summary
 
 device = "cpu"
-log_interval = 1
+log_interval = 10
 
 class SmileNet(nn.Module):
     sweep_configuration = {
@@ -52,9 +52,11 @@ class SmileNet(nn.Module):
         self.Pool1 = nn.MaxPool2d(2)
         self.Conv2 = nn.Conv2d(16, 32, 3)
         self.Pool2 = nn.MaxPool2d(2)
-
-        self.layer1 = nn.Linear(46208, 64)
-        self.layer2 = nn.Linear(64, 5)
+        
+        self.dropout = nn.Dropout(0.25)
+        self.layer1 = nn.Linear(46208, 256)
+        self.layer2 = nn.Linear(256, 64)
+        self.layer3 = nn.Linear(64, 5)
 
     def Model_init(self):
         self.model = SmileNet().to(device)
@@ -62,15 +64,17 @@ class SmileNet(nn.Module):
 
     def forward(self, x):
         x = self.Conv1(x)
-        x = F.relu(self.Pool1(x))
+        x = F.selu(self.Pool1(x))
 
         x = self.Conv2(x)
-        x = F.relu(self.Pool2(x))
+        x = F.selu(self.Pool2(x))
 
         x = flatten(x, 1)
-        x = F.relu(self.layer1(x))
-        pred = F.log_softmax(self.layer2(x))
-
+        x = self.dropout(x)
+        x = F.selu(self.layer1(x))
+        x = F.selu(self.layer2(x))
+        
+        pred = F.softmax(self.layer3(x))
         return pred
 
     def Train(self, epoch, train, wandb):
@@ -80,12 +84,14 @@ class SmileNet(nn.Module):
 
             self.optimizer.zero_grad()
             output = self.model(data)
-            loss = F.nll_loss(output, target)
+            target = target.to(torch.float32)
+
+            loss = F.cross_entropy(output, target)
             loss.backward()
             self.optimizer.step()
 
-            pred = output.data.max(1, keepdim=True)[1]
-            correct += pred.eq(target.data.view_as(pred)).sum()
+            pred = torch.max(output,1)[1]
+            correct += (pred == target).sum()
 
             if idx % log_interval == 0:
                 train_loss = loss.item()
@@ -106,15 +112,18 @@ class SmileNet(nn.Module):
 
         with torch.no_grad():
             for data, target in test:
+                
                 output = self.model(data)
+                target = target.to(torch.float32)
 
                 test_loss += F.cross_entropy(output, target, size_average=False).item()
-                pred = output.data.max(1, keepdim=True)[1]
-                correct += pred.eq(target.data.view_as(pred)).sum()
+                pred = torch.max(output,1)[1]
+                correct += (pred == target).sum()
 
         test_loss /= len(test.dataset)
         test_accuracy = 100. * correct / len(test.dataset)
 
+        print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, len(test.dataset), test_accuracy))
         return test_loss, test_accuracy
     
     def Table_validate(self, test_loader, wandb, indexes = None):
@@ -131,7 +140,6 @@ class SmileNet(nn.Module):
 
                 output = self.model(test_features[i]) #detect
                 pred = int(output.data.max(1, keepdim=True)[1][0][0].tolist())
-                print(pred)
 
                 data.append([wandb.Image(img), pred, label])
             

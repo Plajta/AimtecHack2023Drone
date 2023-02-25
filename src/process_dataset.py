@@ -9,6 +9,7 @@ import torchvision.transforms as transforms
 import albumentations as A
 import numpy as np
 import torch
+from PIL import Image
 
 class SmileDataset(Dataset):
     def __init__(self, train_or_test):
@@ -23,16 +24,13 @@ class SmileDataset(Dataset):
         return len(self.Train_X) + len(self.Test_X)
     
     def __getitem__(self, idx):
+        
         if self.train_or_test:
             image = self.Train_X[idx]
-            labels = open(os.getcwd() + "/data/labels_train.json")
+            label = self.Train_y[idx]
         else:
             image = self.Test_X[idx]
-            labels = open(os.getcwd() + "/data/labels_test.json")
-
-        labels = json.load(labels)
-
-        label = labels[str(idx)]
+            label = self.Test_y[idx]
         
         return image, label
     
@@ -48,7 +46,6 @@ class SmileDataset(Dataset):
         #enumerate training set
         if self.train_or_test:
             for i, path in enumerate(os.listdir(abs_path_train)):
-
                 if os.path.isfile(os.path.join(abs_path_train, path)):
 
                     Train_img = cv2.imread(abs_path_train + "/" + path)
@@ -60,14 +57,13 @@ class SmileDataset(Dataset):
                     Augmented_imgs, Augmented_labels = Augment_img(Train_img, labels_train[str(i)])
                     
                     self.Train_X.extend(Augmented_imgs)
-                    self.Train_X.extend(Augmented_labels)
+                    self.Train_y.extend(Augmented_labels)
 
             self.Train_y = F.one_hot(torch.tensor(self.Train_y, dtype=torch.int64), 5)
 
         #enumerate testing set
         else:
-            for i, path in enumerate(os.listdir(abs_path_test)):
-                
+            for i, path in enumerate(os.listdir(abs_path_test)):     
                 if os.path.isfile(os.path.join(abs_path_test, path)):
 
                     Test_img = cv2.imread(abs_path_test + "/" + path)
@@ -100,7 +96,7 @@ def Convert_To_Tensor(img):
     transform = transforms.ToTensor()
     
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    X = transform(img)
+    X = transform(img).to(torch.float32)
 
     return X
 def Load_Dataset():
@@ -117,7 +113,6 @@ def Load_Dataset():
         test, batch_size=1, shuffle=True #dataset shuffle
     )
     
-    print(len(train_loader))
     return train_loader, test_loader
 
 def Augment_img(Train_img, label):
@@ -125,17 +120,36 @@ def Augment_img(Train_img, label):
     Augmented_labels = [label] * 8
 
     for i in range(3):
-        resize = random.randint(40, 120)
+        resize = random.randint(60, 120)
         Resize_transform = transforms.Resize(size=(resize, resize))
-        Augmented_imgs.append(Resize_transform(Train_img))
+        Resize2_transform = transforms.Resize(size=(160, 160))
+        Convert_transform = transforms.ToPILImage()
+        Convert2_transform = transforms.ToTensor()
+
+        resized_img = Resize_transform(Train_img)
+        PILImage = Convert_transform(resized_img)
+        pad = int((160-resize) / 2)
+        PILImage = add_margin(PILImage, pad)
+        resized_img = Convert2_transform(PILImage)
+        resized_img = Resize2_transform(resized_img) #just in case
+
+        Augmented_imgs.append(resized_img)
 
     for i in range(3):
         rotate = random.randint(45, 125)
         Rotate_transform = transforms.RandomRotation(rotate)
-        Augmented_imgs.append(Rotate_transform(Train_img))
+        Augmented_imgs.append(Rotate_transform(Train_img).to(torch.float32))
 
     Flip_transform = transforms.RandomHorizontalFlip(1)
-    Augmented_imgs.append(Flip_transform(Train_img))
+    Augmented_imgs.append(Flip_transform(Train_img).to(torch.float32))
     Augmented_imgs.append(Train_img) #append original image
 
     return Augmented_imgs, Augmented_labels
+
+def add_margin(pil_img, pad):
+    width, height = pil_img.size
+    new_width = width + 2 * pad
+    new_height = height + 2 * pad
+    result = Image.new(pil_img.mode, (new_width, new_height), (0, 0, 0))
+    result.paste(pil_img, (pad, pad))
+    return result

@@ -21,10 +21,8 @@ def RunSMILENet():
 
         Wandb.wandb.log({"val_accuracy": acc, "val_loss": loss})
 
-    #model.Table_validate(test, Wandb.wandb, [1, 2, 3])
+    #model.Table_validate(test, Wandb.wandb, [1, 2, 3]) does not work <- update
     Wandb.End()
 
 #actual Run
-#Wandb.InitSweep(model.sweep_configuration, "SMILENet", RunSMILENet)
-
-RunSMILENet()
+Wandb.InitSweep(model.sweep_configuration, "SMILENet", RunSMILENet)
