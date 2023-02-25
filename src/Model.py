@@ -13,7 +13,16 @@ log_interval = 10
 
 class SmileNet(nn.Module):
     sweep_configuration = {
-        #TODO: lets just leave it blank
+        'method': 'random',
+        'name': 'sweep',
+        'metric': {'goal': 'maximize', 'name': 'epoch/val_accuracy'},
+        'parameters': 
+        {
+            'batch_size': {'values': [16, 32, 64]},
+            'epochs': {'values': [5, 10, 15]},
+            'lr': {'max': 0.1, 'min': 0.0001}
+        },
+        'run_cap': 10
     }
 
     config = {
@@ -60,7 +69,9 @@ class SmileNet(nn.Module):
         x = F.relu(self.Pool2(x))
 
         x = F.relu(self.layer1(x))
-        x = F.softmax(self.layer2(x))
+        pred = F.softmax(self.layer2(x))
+
+        return pred
 
     def Train(self):
         self.model.train()
