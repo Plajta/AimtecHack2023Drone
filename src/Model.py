@@ -103,3 +103,5 @@ class SmileNet(nn.Module):
 
         test_loss /= len(test.dataset)
         test_accuracy = 100. * correct / len(test.dataset)
+
+        return test_loss, test_accuracy

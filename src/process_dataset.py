@@ -15,6 +15,10 @@ import torch
 class SmileDataset(Dataset):
     def __init__(self, train_or_test):
         self.train_or_test = train_or_test
+        self.Train_X = []
+        self.Train_y = []
+        self.Test_X = []
+        self.Test_y = []
         self.Load_Train_and_Test()
 
     def __len__(self):
@@ -43,43 +47,38 @@ class SmileDataset(Dataset):
         labels_train = json.load(labels_train)
         labels_test = json.load(labels_test)
 
-        self.Train_X = []
-        self.Train_y = []
-
-        self.Test_X = []
-        self.Test_y = []
-
-
         #enumerate training set
-        for i, path in enumerate(os.listdir(abs_path_train)):
+        if self.train_or_test:
+            for i, path in enumerate(os.listdir(abs_path_train)):
 
-            if os.path.isfile(os.path.join(abs_path_train, path)):
-                #train and test reading i kinda weird (index read is kinda weird), at least
-                # i dont have to worry about dataset shuffle
-                #index = path.replace("train.png", "")
+                if os.path.isfile(os.path.join(abs_path_train, path)):
+                    #train and test reading i kinda weird (index read is kinda weird), at least
+                    # i dont have to worry about dataset shuffle
+                    #index = path.replace("train.png", "")
 
-                Train_img = cv2.imread(abs_path_train + "/" + path)
-                Train_img = Convert_To_Tensor(Train_img)
-                
-                self.Train_X.append(Train_img)
-                self.Train_y.append(labels_train[str(i)])
+                    Train_img = cv2.imread(abs_path_train + "/" + path)
+                    Train_img = Convert_To_Tensor(Train_img)
+                    
+                    self.Train_X.append(Train_img)
+                    self.Train_y.append(labels_train[str(i)])
 
-        self.Train_y = F.one_hot(torch.tensor(self.Train_y, dtype=torch.int64), 5)
+            self.Train_y = F.one_hot(torch.tensor(self.Train_y, dtype=torch.int64), 5)
 
         #enumerate testing set
-        for i, path in enumerate(os.listdir(abs_path_test)):
-            
-            if os.path.isfile(os.path.join(abs_path_test, path)):
-                #train and test reading i kinda weird (index read is kinda weird), at least
-                # i dont have to worry about dataset shuffle
+        else:
+            for i, path in enumerate(os.listdir(abs_path_test)):
+                
+                if os.path.isfile(os.path.join(abs_path_test, path)):
+                    #train and test reading i kinda weird (index read is kinda weird), at least
+                    # i dont have to worry about dataset shuffle
 
-                Test_img = cv2.imread(abs_path_test + "/" + path)
-                Test_img = Convert_To_Tensor(Test_img)
+                    Test_img = cv2.imread(abs_path_test + "/" + path)
+                    Test_img = Convert_To_Tensor(Test_img)
 
-                self.Test_X.append(Test_img)
-                self.Test_y.append(labels_test[str(i)])
+                    self.Test_X.append(Test_img)
+                    self.Test_y.append(labels_test[str(i)])
 
-        self.Test_y = F.one_hot(torch.tensor(self.Test_y, dtype=torch.int64), 5)
+            self.Test_y = F.one_hot(torch.tensor(self.Test_y, dtype=torch.int64), 5)
 
 def Random_dataset_inspect(Train_X, Train_y, Test_X, Test_y):
     print("-- TRAIN --")
