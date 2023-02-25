@@ -1,6 +1,6 @@
 import torch
 import torchvision
-from torch import nn
+from torch import nn, flatten
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import torch.nn.functional as F
@@ -34,10 +34,10 @@ class SmileNet(nn.Module):
         "Conv2_in": 16,
         "Conv2_out": 32,
 
-        "Linear1_in": 128,
+        "Linear1_in": 38,
         "Linear1_out": 64,
         "Linear2_in": 64,
-        "Linear2_out": 7,
+        "Linear2_out": 5,
 
         "loss": "categorical_crossentropy",
         "lr": 1e-4,
@@ -54,8 +54,8 @@ class SmileNet(nn.Module):
         self.Conv2 = nn.Conv2d(16, 32, 3)
         self.Pool2 = nn.MaxPool2d(2)
 
-        self.layer1 = nn.Linear(38, 64)
-        self.layer2 = nn.Linear(64, 7)
+        self.layer1 = nn.Linear(46208, 64)
+        self.layer2 = nn.Linear(64, 5)
 
     def Model_init(self):
         self.model = SmileNet().to(device)
@@ -68,8 +68,9 @@ class SmileNet(nn.Module):
         x = self.Conv2(x)
         x = F.relu(self.Pool2(x))
 
+        x = flatten(x, 1)
         x = F.relu(self.layer1(x))
-        pred = F.log_softmax(self.layer2(x))
+        pred = F.softmax(self.layer2(x))
 
         return pred
 
@@ -95,7 +96,8 @@ class SmileNet(nn.Module):
         with torch.no_grad():
             for data, target in test:
                 output = self.model(data)
-                test_loss += F.nll_loss(output, target, size_average=False).item()
+
+                test_loss += F.cross_entropy(output, target, size_average=False).item()
                 pred = output.data.max(1, keepdim=True)[1]
                 correct += pred.eq(target.data.view_as(pred)).sum()
 

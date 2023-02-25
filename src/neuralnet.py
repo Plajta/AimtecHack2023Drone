@@ -19,7 +19,7 @@ def RunSMILENet():
         model.Train(train)
         loss, acc = model.Test(test)
 
-    model.Table_validate() #TODO: dodělat!
+    #model.Table_validate() #TODO: dodělat!
 
 #actual Run
 RunSMILENet()

@@ -4,10 +4,11 @@ import cv2
 import random
 from torchvision import datasets, transforms, models
 from torch.utils.data import Dataset, DataLoader
-import torch 
+from torch.nn import functional as F 
 import torchvision.transforms as transforms
 import albumentations as A
 import numpy as np
+import torch
 
 #just little stupid and simple script to load training and testing images to the algorithm
 
@@ -22,14 +23,14 @@ class SmileDataset(Dataset):
     def __getitem__(self, idx):
         if self.train_or_test:
             image = self.Train_X[idx]
-            labels = open(os.getcwd() + "/data/train/labels_train.json")
+            labels = open(os.getcwd() + "/data/labels_train.json")
         else:
             image = self.Test_X[idx]
-            labels = open(os.getcwd() + "/data/test/labels_test.json")
+            labels = open(os.getcwd() + "/data/labels_test.json")
 
         labels = json.load(labels)
 
-        label = labels[str(idx+1)]
+        label = labels[str(idx)]
         
         return image, label
     
@@ -37,8 +38,8 @@ class SmileDataset(Dataset):
         abs_path_train = os.getcwd() + "/data/train"
         abs_path_test = os.getcwd() + "/data/test"
 
-        labels_train = open(os.getcwd() + "/data/train/labels_train.json")
-        labels_test = open(os.getcwd() + "/data/test/labels_test.json")
+        labels_train = open(os.getcwd() + "/data/labels_train.json")
+        labels_test = open(os.getcwd() + "/data/labels_test.json")
         labels_train = json.load(labels_train)
         labels_test = json.load(labels_test)
 
@@ -51,9 +52,8 @@ class SmileDataset(Dataset):
 
         #enumerate training set
         for i, path in enumerate(os.listdir(abs_path_train)):
-            if i == 30: break #stupid indexation
-            
-            if os.path.isfile(os.path.join(abs_path_train, path)) and "labels_train" not in path:
+
+            if os.path.isfile(os.path.join(abs_path_train, path)):
                 #train and test reading i kinda weird (index read is kinda weird), at least
                 # i dont have to worry about dataset shuffle
                 #index = path.replace("train.png", "")
@@ -62,22 +62,24 @@ class SmileDataset(Dataset):
                 Train_img = Convert_To_Tensor(Train_img)
                 
                 self.Train_X.append(Train_img)
-                self.Train_y.append(str(labels_train[str(i+1)]))
+                self.Train_y.append(labels_train[str(i)])
+
+        self.Train_y = F.one_hot(torch.tensor(self.Train_y, dtype=torch.int64), 5)
 
         #enumerate testing set
         for i, path in enumerate(os.listdir(abs_path_test)):
-            if i == 20: break
             
-            if os.path.isfile(os.path.join(abs_path_test, path)) and "labels_test" not in path:
+            if os.path.isfile(os.path.join(abs_path_test, path)):
                 #train and test reading i kinda weird (index read is kinda weird), at least
                 # i dont have to worry about dataset shuffle
-                #index = path.replace("test.png", "")
 
                 Test_img = cv2.imread(abs_path_test + "/" + path)
                 Test_img = Convert_To_Tensor(Test_img)
 
                 self.Test_X.append(Test_img)
-                self.Test_y.append(str(labels_test[str(i+1)]))
+                self.Test_y.append(labels_test[str(i)])
+
+        self.Test_y = F.one_hot(torch.tensor(self.Test_y, dtype=torch.int64), 5)
 
 def Random_dataset_inspect(Train_X, Train_y, Test_X, Test_y):
     print("-- TRAIN --")
@@ -97,7 +99,6 @@ def Convert_To_Tensor(img):
     
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     X = transform(img)
-    X = torch.unsqueeze(X, dim=0)
 
     return X
 def Load_Dataset():
