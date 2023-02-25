@@ -12,6 +12,7 @@ device = "cpu"
 log_interval = 10
 
 class SmileNet(nn.Module):
+    model_iter = 0
     sweep_configuration = {
         'method': 'random',
         'name': 'sweep',
@@ -42,7 +43,7 @@ class SmileNet(nn.Module):
         "loss": "categorical_crossentropy",
         "lr": 1e-4,
         "metric": "accuracy",
-        "epochs": 20
+        "epochs": 5
     }
 
     def __init__(self):

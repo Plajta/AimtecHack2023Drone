@@ -133,3 +133,4 @@ dmypy.json
 !/data/dataset.zip
 /src/Wandb.py
 /wandb/
+/model/*

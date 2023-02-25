@@ -11,7 +11,7 @@ model.Model_init()
 
 def RunSMILENet():
     #basically a CNN
-    Wandb.Init("SMILENet", model.config, "SMILENet v1")
+    Wandb.Init("SMILENet", model.config, "SMILENet v1 run:" + model.model_iter)
 
     init_loss, init_acc = model.Test(test)
     Wandb.wandb.log({"val_accuracy": init_acc, "val_loss": init_loss})
@@ -21,6 +21,7 @@ def RunSMILENet():
 
         Wandb.wandb.log({"val_accuracy": acc, "val_loss": loss})
 
+    model.model_iter += 1
     #model.Table_validate(test, Wandb.wandb, [1, 2, 3]) does not work <- update
     Wandb.End()
 
