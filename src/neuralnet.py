@@ -1,7 +1,8 @@
 import Wandb
-
+import torch
 import Model
 import process_dataset
+import os
 
 #setup
 train, test = process_dataset.Load_Dataset()
@@ -20,6 +21,8 @@ def RunSMILENet():
         loss, acc = model.Test(test)
 
         Wandb.wandb.log({"val_accuracy": acc, "val_loss": loss})
+    
+    torch.save(model, os.getcwd() + "/model/SMILENet" + str(model.model_iter) + ".pth")
 
     model.model_iter += 1
     #model.Table_validate(test, Wandb.wandb, [1, 2, 3]) does not work <- update

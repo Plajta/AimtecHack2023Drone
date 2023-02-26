@@ -134,3 +134,5 @@ dmypy.json
 /src/Wandb.py
 /wandb/
 /model/*
+!/model/model.zip
+!/model/.gitkeep
