@@ -9,7 +9,7 @@ import torch.optim as optim
 from torchsummary import summary
 
 device = "cpu"
-log_interval = 10
+log_interval = 1 #for every batch
 batch_size = 32
 
 class SmileNet(nn.Module):
@@ -79,8 +79,7 @@ class SmileNet(nn.Module):
         return pred
 
     def Train(self, epoch, train, wandb):
-        self.model.train()
-        for batch_idx, (data, target) in enumerate(train):
+        for batch_idx, (data, target) in enumerate(train):       
             correct = 0
 
             self.optimizer.zero_grad()
@@ -92,6 +91,7 @@ class SmileNet(nn.Module):
             self.optimizer.step()
 
             pred = torch.max(output,1)[1]
+            target = torch.argmax(target, dim=1) #converting back from one-hot
             correct += (pred == target).sum()
 
             if batch_idx % log_interval == 0:
@@ -101,8 +101,7 @@ class SmileNet(nn.Module):
                 #reset counter
                 correct = 0
 
-                #print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train.dataset), 100. * batch_idx / len(train), train_loss))
-                print("Train epoch: " + str(epoch), str(batch_idx))
+                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train.dataset), 100. * batch_idx / len(train), train_loss))
 
                 #log to wandb
                 wandb.log({"accuracy": train_accuracy, "loss": train_loss})
@@ -120,12 +119,13 @@ class SmileNet(nn.Module):
 
                 test_loss += F.cross_entropy(output, target, size_average=False).item()
                 pred = torch.max(output,1)[1]
+                target = torch.argmax(target, dim=1) #converting back from one-hot
                 correct += (pred == target).sum()
 
         test_loss /= len(test.dataset)
         test_accuracy = 100. * (correct / len(test.dataset))
 
-        print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(str(test_loss), str(correct), str(batch_size), str(test_accuracy)))
+        print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, batch_size, test_accuracy))
         return test_loss, test_accuracy
     
     def Table_validate(self, test_loader, wandb, indexes = None):
