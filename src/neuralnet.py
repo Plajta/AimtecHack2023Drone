@@ -11,7 +11,7 @@ model.Model_init()
 
 def RunSMILENet():
     #basically a CNN
-    Wandb.Init("SMILENet", model.config, "SMILENet v1 run:" + model.model_iter)
+    Wandb.Init("SMILENet", model.config, "SMILENet v1 run:" + str(model.model_iter))
 
     init_loss, init_acc = model.Test(test)
     Wandb.wandb.log({"val_accuracy": init_acc, "val_loss": init_loss})

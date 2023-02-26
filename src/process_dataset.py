@@ -106,11 +106,11 @@ def Load_Dataset():
     test = SmileDataset(train_or_test=False)
 
     train_loader = DataLoader(
-        train, batch_size=1, shuffle=True #dataset shuffle
+        train, batch_size=32, shuffle=True #dataset shuffle
     )
 
     test_loader = DataLoader(
-        test, batch_size=1, shuffle=True #dataset shuffle
+        test, batch_size=32, shuffle=True #dataset shuffle
     )
     
     return train_loader, test_loader

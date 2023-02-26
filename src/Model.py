@@ -10,6 +10,7 @@ from torchsummary import summary
 
 device = "cpu"
 log_interval = 10
+batch_size = 32
 
 class SmileNet(nn.Module):
     model_iter = 0
@@ -19,7 +20,6 @@ class SmileNet(nn.Module):
         'metric': {'goal': 'maximize', 'name': 'val_accuracy'},
         'parameters': 
         {
-            'batch_size': {'values': [16, 32, 64]},
             'epochs': {'values': [5, 10, 15]},
             'lr': {'max': 0.1, 'min': 0.0001}
         },
@@ -43,7 +43,7 @@ class SmileNet(nn.Module):
         "loss": "categorical_crossentropy",
         "lr": 1e-4,
         "metric": "accuracy",
-        "epochs": 5
+        "epochs": 10
     }
 
     def __init__(self):
@@ -75,12 +75,12 @@ class SmileNet(nn.Module):
         x = F.selu(self.layer1(x))
         x = F.selu(self.layer2(x))
         
-        pred = F.softmax(self.layer3(x))
+        pred = F.softmax(self.layer3(x), dim=1)
         return pred
 
     def Train(self, epoch, train, wandb):
         self.model.train()
-        for idx, (data, target) in enumerate(train):
+        for batch_idx, (data, target) in enumerate(train):
             correct = 0
 
             self.optimizer.zero_grad()
@@ -94,14 +94,15 @@ class SmileNet(nn.Module):
             pred = torch.max(output,1)[1]
             correct += (pred == target).sum()
 
-            if idx % log_interval == 0:
+            if batch_idx % log_interval == 0:
                 train_loss = loss.item()
-                train_accuracy = 100. * correct / len(train.dataset)
+                train_accuracy = 100. * (correct / batch_size)
 
                 #reset counter
                 correct = 0
 
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, idx * len(data), len(train.dataset), 100. * idx / len(train), train_loss))
+                #print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data), len(train.dataset), 100. * batch_idx / len(train), train_loss))
+                print("Train epoch: " + str(epoch), str(batch_idx))
 
                 #log to wandb
                 wandb.log({"accuracy": train_accuracy, "loss": train_loss})
@@ -122,9 +123,9 @@ class SmileNet(nn.Module):
                 correct += (pred == target).sum()
 
         test_loss /= len(test.dataset)
-        test_accuracy = 100. * correct / len(test.dataset)
+        test_accuracy = 100. * (correct / len(test.dataset))
 
-        print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, len(test.dataset), test_accuracy))
+        print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(str(test_loss), str(correct), str(batch_size), str(test_accuracy)))
         return test_loss, test_accuracy
     
     def Table_validate(self, test_loader, wandb, indexes = None):
