@@ -51,10 +51,10 @@ class SmileDataset(Dataset):
                     Train_img = cv2.imread(abs_path_train + "/" + path)
                     Train_img = Convert_To_Tensor(Train_img)
 
-                    #Augment 1 training image to 7 images (total train images = 30*7=210)
-                    #list of augmentations: Resize (3 imgs), Rotate (3 imgs), Horizontal Flip (1 imgs)
+                    #Augment 1 training image to 22 images (total train images = 30*7=210)
+                    #list of augmentations: Resize (10 imgs), Rotate (10 imgs), Horizontal Flip (1 imgs)
                     
-                    Augmented_imgs, Augmented_labels = Augment_img(Train_img, labels_train[str(i)])
+                    Augmented_imgs, Augmented_labels = Augment_img(Train_img, labels_train[str(i)], (10, 10, 1))
                     
                     self.Train_X.extend(Augmented_imgs)
                     self.Train_y.extend(Augmented_labels)
@@ -69,10 +69,10 @@ class SmileDataset(Dataset):
                     Test_img = cv2.imread(abs_path_test + "/" + path)
                     Test_img = Convert_To_Tensor(Test_img)
 
-                    #Augment 1 testing image to 7 images (total test images = 20*7=140)
-                    #list of augmentations: Resize (3 imgs), Rotate (3 imgs), Horizontal Flip (1 imgs)
+                    #Augment 1 testing image to 22 images
+                    #list of augmentations: Resize (10 imgs), Rotate (10 imgs), Horizontal Flip (1 imgs)
 
-                    Augmented_imgs, Augmented_labels = Augment_img(Test_img, labels_test[str(i)])
+                    Augmented_imgs, Augmented_labels = Augment_img(Test_img, labels_test[str(i)], (10, 10, 1))
                     
                     self.Test_X.extend(Augmented_imgs)
                     self.Test_y.extend(Augmented_labels)
@@ -115,11 +115,11 @@ def Load_Dataset():
     
     return train_loader, test_loader
 
-def Augment_img(Train_img, label):
+def Augment_img(Train_img, label, len_transforms):
     Augmented_imgs = []
-    Augmented_labels = [label] * 8
+    Augmented_labels = [label] * (sum(len_transforms) + 1)
 
-    for i in range(3):
+    for i in range(len_transforms[0]):
         resize = random.randint(60, 120)
         Resize_transform = transforms.Resize(size=(resize, resize))
         Resize2_transform = transforms.Resize(size=(160, 160))
@@ -135,7 +135,7 @@ def Augment_img(Train_img, label):
 
         Augmented_imgs.append(resized_img)
 
-    for i in range(3):
+    for i in range(len_transforms[1]):
         rotate = random.randint(45, 125)
         Rotate_transform = transforms.RandomRotation(rotate)
         Augmented_imgs.append(Rotate_transform(Train_img).to(torch.float32))
