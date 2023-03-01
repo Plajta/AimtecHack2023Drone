@@ -80,6 +80,7 @@ with mp_face_mesh.FaceMesh(
         blank = np.zeros((h, w, c))
         ROI = np.zeros((roi_size, roi_size, c))
         OUT = np.zeros((8, 8, 3))
+        NN_input = np.zeros((roi_size, roi_size))
 
         #create cool looking smiley face
         OUT[2:6, 0, :] = (255, 0, 0)
@@ -197,7 +198,10 @@ with mp_face_mesh.FaceMesh(
                     ROI[pad_y:ROI_propose.shape[0]+pad_y, :] = ROI_propose
                     ROI = ROI.astype(dtype=np.uint8)
 
-                    ROI_tensor = process_dataset.Convert_To_Tensor(ROI)
+                    ROI[np.all(ROI == (0, 0, 255), axis=-1)] = (255,255,255)
+                    NN_input = cv2.cvtColor(ROI, cv2.COLOR_BGR2GRAY)
+
+                    ROI_tensor = process_dataset.Convert_To_Tensor(NN_input)
                     ROI_tensor = torch.unsqueeze(ROI_tensor, 0)
                     output = SMILENet(ROI_tensor)
                     pred = int(torch.max(output,1)[1][0].to(torch.uint8))
@@ -222,10 +226,12 @@ with mp_face_mesh.FaceMesh(
                             OUT[5, 6, :] = (0, 0, 255)
                             OUT[4, 1:7, :] = (0, 0, 255)
 
+
+
         # Flip the image horizontally for a selfie-view display.
         cv2.imshow('MediaPipe Face Mesh', image)
         #cv2.imshow('Smile approx', blank)
-        cv2.imshow("Smile ROI", ROI)
+        cv2.imshow("Smile ROI", NN_input)
         cv2.imshow("CNN Output", OUT)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

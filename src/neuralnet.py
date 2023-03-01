@@ -29,4 +29,5 @@ def RunSMILENet():
     Wandb.End()
 
 #actual Run
-Wandb.InitSweep(model.sweep_configuration, "SMILENet", RunSMILENet)
+#Wandb.InitSweep(model.sweep_configuration, "SMILENet", RunSMILENet)
+RunSMILENet()

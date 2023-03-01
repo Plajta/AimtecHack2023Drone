@@ -136,3 +136,4 @@ dmypy.json
 /model/*
 !/model/model.zip
 !/model/.gitkeep
+/Best_models/

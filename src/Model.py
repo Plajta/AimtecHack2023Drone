@@ -41,7 +41,7 @@ class SmileNet(nn.Module):
         "Linear2_out": 5,
 
         "loss": "categorical_crossentropy",
-        "lr": 1e-4,
+        "lr": 1e-2,
         "metric": "accuracy",
         "epochs": 10
     }
@@ -49,33 +49,45 @@ class SmileNet(nn.Module):
     def __init__(self):
         super(SmileNet, self).__init__()
 
-        self.Conv1 = nn.Conv2d(3, 16, 3)
-        self.Pool1 = nn.MaxPool2d(2)
-        self.Conv2 = nn.Conv2d(16, 32, 3)
-        self.Pool2 = nn.MaxPool2d(2)
+        """"
+        self.Conv1 = nn.Conv2d(1, 3, 3, dilation=3, stride=3)
+        self.Pool1 = nn.MaxPool2d(4)
         
-        self.dropout = nn.Dropout(0.25)
-        self.layer1 = nn.Linear(46208, 256)
-        self.layer2 = nn.Linear(256, 64)
-        self.layer3 = nn.Linear(64, 5)
+        self.Conv2 = nn.Conv2d(3, 6, 3)
+        self.Pool2 = nn.MaxPool2d(2)
+        """
+
+        self.dropout = nn.Dropout(0.75)
+        self.layer1 = nn.Linear(25600, 512)
+        self.layer2 = nn.Linear(512, 64)
+        self.layer3 = nn.Linear(64, 32)
+        self.layer4 = nn.Linear(32, 5)
 
     def Model_init(self):
         self.model = SmileNet().to(device)
-        self.optimizer = optim.Adam(self.model.parameters(), self.config["lr"])
+        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9)
+    
+    def L2_regularize(self, loss):
+        l2_lambda = 0.001
+        l2_norm = sum(p.pow(2.0).sum()
+                    for p in self.model.parameters())
+    
+        loss = loss + l2_lambda * l2_norm
 
     def forward(self, x):
+        """
         x = self.Conv1(x)
         x = F.selu(self.Pool1(x))
 
         x = self.Conv2(x)
         x = F.selu(self.Pool2(x))
-
+        """
         x = flatten(x, 1)
         x = self.dropout(x)
         x = F.selu(self.layer1(x))
         x = F.selu(self.layer2(x))
-        
-        pred = F.softmax(self.layer3(x), dim=1)
+        x = F.selu(self.layer3(x))
+        pred = F.softmax(self.layer4(x), dim=1)
         return pred
 
     def Train(self, epoch, train, wandb):
@@ -87,6 +99,7 @@ class SmileNet(nn.Module):
             target = target.to(torch.float32)
 
             loss = F.cross_entropy(output, target)
+            self.L2_regularize(loss) #maybe completely useless
             loss.backward()
             self.optimizer.step()
 
@@ -125,7 +138,9 @@ class SmileNet(nn.Module):
         test_loss /= len(test.dataset)
         test_accuracy = 100. * (correct / len(test.dataset))
 
-        print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, batch_size, test_accuracy))
+        #print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, batch_size, test_accuracy))
+        print("test_loss, test_accuracy")
+        print(test_loss, test_accuracy)
         return test_loss, test_accuracy
     
     def Table_validate(self, test_loader, wandb, indexes = None):
