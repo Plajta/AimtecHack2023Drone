@@ -38,34 +38,24 @@ class SmileNet(nn.Module):
         "Linear1_in": 38,
         "Linear1_out": 64,
         "Linear2_in": 64,
-        "Linear2_out": 5,
+        "Linear2_out": 3,
 
         "loss": "categorical_crossentropy",
-        "lr": 1e-2,
+        "lr": 1e-4,
         "metric": "accuracy",
         "epochs": 10
     }
 
     def __init__(self):
         super(SmileNet, self).__init__()
-
-        """"
-        self.Conv1 = nn.Conv2d(1, 3, 3, dilation=3, stride=3)
-        self.Pool1 = nn.MaxPool2d(4)
         
-        self.Conv2 = nn.Conv2d(3, 6, 3)
-        self.Pool2 = nn.MaxPool2d(2)
-        """
-
-        self.dropout = nn.Dropout(0.75)
-        self.layer1 = nn.Linear(25600, 512)
-        self.layer2 = nn.Linear(512, 64)
-        self.layer3 = nn.Linear(64, 32)
-        self.layer4 = nn.Linear(32, 5)
+        self.dropout = nn.Dropout(0.5)
+        self.layer1 = nn.Linear(25600, 8)
+        self.layer2 = nn.Linear(8, 4)
 
     def Model_init(self):
         self.model = SmileNet().to(device)
-        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9)
+        self.optimizer = optim.Adam(self.model.parameters())
     
     def L2_regularize(self, loss):
         l2_lambda = 0.001
@@ -75,19 +65,11 @@ class SmileNet(nn.Module):
         loss = loss + l2_lambda * l2_norm
 
     def forward(self, x):
-        """
-        x = self.Conv1(x)
-        x = F.selu(self.Pool1(x))
-
-        x = self.Conv2(x)
-        x = F.selu(self.Pool2(x))
-        """
+        
         x = flatten(x, 1)
         x = self.dropout(x)
         x = F.selu(self.layer1(x))
-        x = F.selu(self.layer2(x))
-        x = F.selu(self.layer3(x))
-        pred = F.softmax(self.layer4(x), dim=1)
+        pred = F.softmax(self.layer2(x), dim=1)
         return pred
 
     def Train(self, epoch, train, wandb):

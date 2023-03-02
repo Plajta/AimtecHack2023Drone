@@ -21,6 +21,7 @@ def RunSMILENet():
         loss, acc = model.Test(test)
 
         Wandb.wandb.log({"val_accuracy": acc, "val_loss": loss})
+        torch.save(model, os.getcwd() + "/model/SMILENet" + str(model.model_iter) + str(int(acc)) + ".pth")
     
     torch.save(model, os.getcwd() + "/model/SMILENet" + str(model.model_iter) + ".pth")
 

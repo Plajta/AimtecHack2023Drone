@@ -20,7 +20,7 @@ face_landmarks_lower = [78, 95, 88, 178, 87, 14, 317, 405, 318, 324, 308]
 face_landmarks_upper = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308]
 
 #Pytorch setup
-SMILENet = torch.load(os.getcwd() + "/model/SMILENet0.pth") #best model yet
+#SMILENet = torch.load(os.getcwd() + "/Best_models/SMILENet0.pth") #best model yet
 
 def DrawSmile(arr_y, arr_x, col):
     for i in range(arr_x.shape[0]):
@@ -58,6 +58,9 @@ def JawComputations(jaw_arr):
 
 #variables:
 roi_size = 160
+val_buffer1, val_buffer2 = [], []
+val_buffer_out1 = 0
+val_buffer_out2 = 0
 
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 cap = cv2.VideoCapture(0)
@@ -80,7 +83,6 @@ with mp_face_mesh.FaceMesh(
         blank = np.zeros((h, w, c))
         ROI = np.zeros((roi_size, roi_size, c))
         OUT = np.zeros((8, 8, 3))
-        NN_input = np.zeros((roi_size, roi_size))
 
         #create cool looking smiley face
         OUT[2:6, 0, :] = (255, 0, 0)
@@ -180,12 +182,66 @@ with mp_face_mesh.FaceMesh(
                     bot_x = np.amax(out_x_low) + 5
                     bot_y = np.amax(out_y_low) + 5
 
+                    ROI = blank[top_y:bot_y, top_x:bot_x]
+
+                    ROI_mid_R = ROI[:, round(ROI.shape[1] / 2), 2]
+                    num_R = np.sum(ROI_mid_R == 255)
+                    num_B = ROI.shape[0] - num_R
+                    ratio = round(num_R / num_B, 2)
+
+                    #get two side points
+                    pt1 = np.where(ROI[:, 6, 2] == 255)
+                    pt2 = np.where(ROI[:, ROI.shape[1] - 6, 2] == 255)
+                    pt1 = round(np.sum(pt1[0]) / pt1[0].shape[0])
+                    pt2 = round(np.sum(pt2[0]) / pt2[0].shape[0])
+
+                    pt1_ratio = round(pt1 / ROI.shape[0], 2)
+                    pt2_ratio = round(pt2 / ROI.shape[0], 2)
+                    pt_ratio = round((pt1_ratio + pt2_ratio) / 2, 2)
+
+                    #Add to value buffer
+                    if len(val_buffer1) == 3:
+                        val_buffer_out1 = sum(val_buffer1) / len(val_buffer1)
+                        val_buffer_out2 = sum(val_buffer2) / len(val_buffer2)
+                        val_buffer1 = []
+                        val_buffer2 = []
+                    else:
+                        val_buffer1.append(ratio)
+                        val_buffer2.append(pt_ratio)
+
+
+                    if 0.6 < val_buffer_out1 < 1:
+                        OUT[5, 2:6, :] = (0, 0, 255)
+                        print("Mood: 1")
+                    if 0.3 < val_buffer_out1 < 0.6:
+                        if val_buffer_out2 <= 0.3:
+                            OUT[6, 2:6, :] = (0, 0, 255)
+                            OUT[5, 1, :] = (0, 0, 255)
+                            OUT[5, 6, :] = (0, 0, 255)
+                            print("Mood: 2, 1")
+
+                        elif val_buffer_out2 <= 0.5:
+                            OUT[6, 3:5, :] = (0, 0, 255)
+                            OUT[5, 2, :] = (0, 0, 255)
+                            OUT[5, 5, :] = (0, 0, 255)
+                            print("Mood: 2, 2")
+                        else:
+                            OUT[5, 3:5, :] = (0, 0, 255)
+                            OUT[6, 2, :] = (0, 0, 255)
+                            OUT[6, 5, :] = (0, 0, 255)
+                            print("Mood: 2, 3")
+                    if 0.0 < val_buffer_out1 < 0.3:
+                        OUT[6, 2:6, :] = (0, 0, 255)
+                        OUT[5, 1, :] = (0, 0, 255)
+                        OUT[5, 6, :] = (0, 0, 255)
+                        OUT[4, 2:6, :] = (0, 0, 255)
+                        print("Mood: 3")
+
+                    """ Fuck neural nets
                     roi_h = bot_y-top_y
                     roi_w = bot_x-top_x
                     
-                    #transform ROI into 120x120 full ROI
-                    #ROI_propose = cv2.resize(blank[top_y:bot_y, top_x:bot_x], (roi_w, roi_h))
-                    #ROI[pad_y:roi_h+pad_y, pad_x:roi_w+pad_x] = ROI_propose
+                    #transform ROI into 160x160 full ROI
 
                     scale_y_to_x = roi_h / roi_w
                     if scale_y_to_x > 1:
@@ -198,40 +254,20 @@ with mp_face_mesh.FaceMesh(
                     ROI[pad_y:ROI_propose.shape[0]+pad_y, :] = ROI_propose
                     ROI = ROI.astype(dtype=np.uint8)
 
-                    ROI[np.all(ROI == (0, 0, 255), axis=-1)] = (255,255,255)
-                    NN_input = cv2.cvtColor(ROI, cv2.COLOR_BGR2GRAY)
+                    #ROI[np.all(ROI == (0, 0, 255), axis=-1)] = (255,255,255)
+                    #NN_input = cv2.cvtColor(ROI, cv2.COLOR_BGR2GRAY)
 
                     ROI_tensor = process_dataset.Convert_To_Tensor(NN_input)
                     ROI_tensor = torch.unsqueeze(ROI_tensor, 0)
                     output = SMILENet(ROI_tensor)
                     pred = int(torch.max(output,1)[1][0].to(torch.uint8))
-                    
-                    match pred:
-                        case 0:
-                            OUT[6, 3:5, :] = (0, 0, 255)
-                            OUT[5, 2, :] = (0, 0, 255)
-                            OUT[5, 5, :] = (0, 0, 255)
-                        case 1:
-                            OUT[6, 3:5, :] = (0, 0, 255)
-                            OUT[5, 2:6, :] = (0, 0, 255)
-                        case 2:
-                            OUT[5, 2:6, :] = (0, 0, 255)
-                        case 3:
-                            OUT[6, 2:6, :] = (0, 0, 255)
-                            OUT[5, 1, :] = (0, 0, 255)
-                            OUT[5, 6, :] = (0, 0, 255)
-                        case 4:
-                            OUT[6, 2:6, :] = (0, 0, 255)
-                            OUT[5, 1, :] = (0, 0, 255)
-                            OUT[5, 6, :] = (0, 0, 255)
-                            OUT[4, 1:7, :] = (0, 0, 255)
-
+                    """
 
 
         # Flip the image horizontally for a selfie-view display.
         cv2.imshow('MediaPipe Face Mesh', image)
         #cv2.imshow('Smile approx', blank)
-        cv2.imshow("Smile ROI", NN_input)
+        cv2.imshow("Smile ROI", ROI)
         cv2.imshow("CNN Output", OUT)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

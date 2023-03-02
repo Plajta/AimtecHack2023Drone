@@ -56,12 +56,12 @@ class SmileDataset(Dataset):
                     #Augment 1 training image to more images (total train images = 30*7=210)
                     #list of augmentations: Resize (10 imgs), Rotate (10 imgs), Horizontal Flip (1 imgs)
                     path = path.replace("train.png", "")
-                    Augmented_imgs, Augmented_labels = Augment_img(Train_img, labels_train[path], (60, 60, 60))
+                    Augmented_imgs, Augmented_labels = Augment_img(Train_img, labels_train[path], (120, 120, 60))
                     
                     self.Train_X.extend(Augmented_imgs)
                     self.Train_y.extend(Augmented_labels)
 
-            self.Train_y = F.one_hot(torch.tensor(self.Train_y, dtype=torch.int64), 5)
+            self.Train_y = F.one_hot(torch.tensor(self.Train_y, dtype=torch.int64), 4)
 
         #enumerate testing set
         else:
@@ -77,12 +77,12 @@ class SmileDataset(Dataset):
                     #Augment 1 testing image to more images
                     #list of augmentations: Resize (10 imgs), Rotate (10 imgs), Horizontal Flip (1 imgs)
                     path = path.replace("test.png", "")
-                    Augmented_imgs, Augmented_labels = Augment_img(Test_img, labels_test[path], (60, 60, 60))
+                    Augmented_imgs, Augmented_labels = Augment_img(Test_img, labels_test[path], (120, 120, 60))
 
                     self.Test_X.extend(Augmented_imgs)
                     self.Test_y.extend(Augmented_labels)
 
-            self.Test_y = F.one_hot(torch.tensor(self.Test_y, dtype=torch.int64), 5)
+            self.Test_y = F.one_hot(torch.tensor(self.Test_y, dtype=torch.int64), 4)
 
 def Random_dataset_inspect(Train_X, Train_y, Test_X, Test_y):
     print("-- TRAIN --")
