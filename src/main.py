@@ -136,16 +136,16 @@ with mp_face_mesh.FaceMesh(
                 #
                 # FACE DETECTION
                 #
-                X_bot = face_landmarks.landmark[234].x
-                X_top = face_landmarks.landmark[454].x
+                X_bot = math.floor(face_landmarks.landmark[234].x * w)
+                X_top = math.floor(face_landmarks.landmark[454].x * w)
 
-                Y_bot = face_landmarks.landmark[152].y
-                Y_top = face_landmarks.landmark[10].y
+                Y_bot = math.floor(face_landmarks.landmark[152].y * h)
+                Y_top = math.floor(face_landmarks.landmark[10].y * h)
 
                 #just for visualisation
                 cv2.rectangle(image, (X_bot, Y_bot), (X_top, Y_top), (255, 0, 0), 2)
 
-                face_center = [((X_top - X_bot) / 2) + X_bot, ((Y_top - Y_bot) / 2) + Y_bot]
+                face_center = [(((X_top - X_bot) / 2) + X_bot) * w, (((Y_top - Y_bot) / 2) + Y_bot) * h]
 
                 #
                 # SMILE LOCALIZATION
