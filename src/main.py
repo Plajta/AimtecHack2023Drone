@@ -134,6 +134,20 @@ with mp_face_mesh.FaceMesh(
                     .get_default_face_mesh_iris_connections_style())
                 
                 #
+                # FACE DETECTION
+                #
+                X_bot = face_landmarks.landmark[234].x
+                X_top = face_landmarks.landmark[454].x
+
+                Y_bot = face_landmarks.landmark[152].y
+                Y_top = face_landmarks.landmark[10].y
+
+                #just for visualisation
+                cv2.rectangle(image, (X_bot, Y_bot), (X_top, Y_top), (255, 0, 0), 2)
+
+                face_center = [((X_top - X_bot) / 2) + X_bot, ((Y_top - Y_bot) / 2) + Y_bot]
+
+                #
                 # SMILE LOCALIZATION
                 #
                 jaw_low = np.zeros((len(face_landmarks_lower), 2))
@@ -271,18 +285,5 @@ with mp_face_mesh.FaceMesh(
         cv2.imshow("CNN Output", OUT)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        
-        """
-        elif cv2.waitKey(33) == ord('a'):
-            count = 0
-            for path in os.listdir(os.getcwd() + "/data/"):
-                # check if current path is a file
-                if os.path.isfile(os.path.join(os.getcwd() + "/data/", path)):
-                    count += 1
-
-            print(count)
-            cv2.imwrite(os.getcwd() + "/data/" + str(count+1) + ".png", ROI)
-            print("saved!")
-        """
 
 cap.release()
