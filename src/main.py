@@ -142,43 +142,45 @@ with mp_face_mesh.FaceMesh(
                 Y_bot = math.floor(face_landmarks.landmark[152].y * h)
                 Y_top = math.floor(face_landmarks.landmark[10].y * h)
 
-                #just for visualisation
-                cv2.rectangle(image, (X_bot, Y_bot), (X_top, Y_top), (255, 0, 0), 2)
+                print(X_bot, X_top, Y_bot, Y_top)
 
-                face_center = [(((X_top - X_bot) / 2) + X_bot) * w, (((Y_top - Y_bot) / 2) + Y_bot) * h]
+                if ((Y_top > 0) and (Y_bot < image.shape[0])) and ((X_bot > 0) and (X_top < image.shape[1])):
 
-                #
-                # SMILE LOCALIZATION
-                #
-                jaw_low = np.zeros((len(face_landmarks_lower), 2))
-                jaw_up = np.zeros((len(face_landmarks_upper), 2))
-                
-                #lower line
-                for i, i_low in enumerate(face_landmarks_lower):
-                    X = face_landmarks.landmark[i_low].x
-                    Y = face_landmarks.landmark[i_low].y
+                    #just for visualisation
+                    cv2.rectangle(image, (X_bot, Y_bot), (X_top, Y_top), (255, 0, 0), 2)
 
-                    X = math.floor(X * w)
-                    Y = math.floor(Y * h)
+                    face_center = [(((X_top - X_bot) / 2) + X_bot) * w, (((Y_top - Y_bot) / 2) + Y_bot) * h]
 
-                    jaw_low[i, 0] = Y
-                    jaw_low[i, 1] = X
+                    #
+                    # SMILE LOCALIZATION
+                    #
+                    jaw_low = np.zeros((len(face_landmarks_lower), 2))
+                    jaw_up = np.zeros((len(face_landmarks_upper), 2))
+                    
+                    #lower line
+                    for i, i_low in enumerate(face_landmarks_lower):
+                        X = face_landmarks.landmark[i_low].x
+                        Y = face_landmarks.landmark[i_low].y
 
-                #upper line
-                for i, i_up in enumerate(face_landmarks_upper):
-                    X = face_landmarks.landmark[i_up].x
-                    Y = face_landmarks.landmark[i_up].y
+                        X = math.floor(X * w)
+                        Y = math.floor(Y * h)
 
-                    X = math.floor(X * w)
-                    Y = math.floor(Y * h)
+                        jaw_low[i, 0] = Y
+                        jaw_low[i, 1] = X
 
-                    jaw_up[i, 0] = Y
-                    jaw_up[i, 1] = X
+                    #upper line
+                    for i, i_up in enumerate(face_landmarks_upper):
+                        X = face_landmarks.landmark[i_up].x
+                        Y = face_landmarks.landmark[i_up].y
 
-                out_y_low, out_x_low = JawComputations(jaw_low)
-                out_y_up, out_x_up = JawComputations(jaw_up)
+                        X = math.floor(X * w)
+                        Y = math.floor(Y * h)
 
-                if ((np.all(out_x_up) > h) == False or (np.all(out_y_up) > w) == False): #check if smile is in frame (poly1d not goin to converge)
+                        jaw_up[i, 0] = Y
+                        jaw_up[i, 1] = X
+
+                    out_y_low, out_x_low = JawComputations(jaw_low)
+                    out_y_up, out_x_up = JawComputations(jaw_up)
                 
                     #
                     # DRAW THAT SMILE
