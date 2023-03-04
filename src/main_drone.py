@@ -5,22 +5,23 @@ from queue import Queue
 
 from djitellopy import Tello
 import threading
+import DetectSmile
 
+tello = Tello()
 
 def videoRecorder():
     while True:
         image = tello.get_frame_read().frame
 
-        img_orig, coords = det.DetectPytorch(image)
+        OUT, (X_bot, X_top, Y_bot, Y_top) = DetectSmile.DetectSMILE(image)
 
-        cv2.imshow("image", img_orig)
+        cv2.imshow("output", OUT)
         cv2.waitKey(1)
 
-def MotorController():
+def FollowFaces():
     while True:
         image = tello.get_frame_read().frame
-
-        Cor_det.FindCorners()
+        
 
 
 tello = Tello()
