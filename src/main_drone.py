@@ -6,35 +6,42 @@ from queue import Queue
 from djitellopy import Tello
 import threading
 import DetectSmile
+import led_matrix
+import logging
 
 tello = Tello()
+tello.LOGGER.setLevel(logging.DEBUG)
+run = True
 
 def videoRecorder():
-    while True:
+    while run:
         image = tello.get_frame_read().frame
 
         OUT, (X_bot, X_top, Y_bot, Y_top) = DetectSmile.DetectSMILE(image)
+        led_matrix.light_metrix(tello, OUT)
+
+        # some motor controlling xD
+        #
+        #
 
         cv2.imshow("output", OUT)
-        cv2.waitKey(1)
-
-def FollowFaces():
-    while True:
-        image = tello.get_frame_read().frame
-        
-
+        if cv2.waitKey(1) == ord('q'):
+            led_matrix.clear_metrix(tello)
+            run = False
+            break
 
 tello = Tello()
-
-tello.connect()
+time.sleep(3)
+tello.connect(False)
 
 tello.streamon()
 
 recorder = Thread(target=videoRecorder)
 recorder.start()
 
-"""
+
 tello.takeoff()
+"""
 tello.rotate_counter_clockwise(360)
 tello.land()
 keepRecording = False
