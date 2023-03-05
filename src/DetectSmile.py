@@ -279,4 +279,4 @@ def DetectSMILE(image):
                 pred = int(torch.max(output,1)[1][0].to(torch.uint8))
                 """
 
-    return OUT, deviation
+    return OUT, ROI
