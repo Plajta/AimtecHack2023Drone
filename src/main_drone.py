@@ -13,11 +13,13 @@ tello = Tello()
 #tello.LOGGER.setLevel(logging.DEBUG)
 
 time.sleep(3)
-tello.connect(False)
+tello.connect()
+tello.streamon()
+frame_read = tello.get_frame_read()
 
 def videoRecorder():
     while True:
-        image = tello.get_frame_read().frame
+        image = frame_read.frame
 
         OUT, deviation = DetectSmile.DetectSMILE(image)
         led_matrix.light_metrix(tello, OUT)
@@ -31,6 +33,7 @@ def videoRecorder():
         else: tello.rotate_counter_clockwise(-dev_to_deg_X)
 
         cv2.imshow("output", OUT)
+        cv2.imshow("output_drone", image)
         if cv2.waitKey(1) == ord('q'):
             led_matrix.clear_metrix(tello)
             run = False

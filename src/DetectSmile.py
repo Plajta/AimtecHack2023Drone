@@ -60,6 +60,7 @@ roi_size = 160
 val_buffer1, val_buffer2 = [], []
 val_buffer_out1 = 0
 val_buffer_out2 = 0
+deviation = 0
 
 
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
