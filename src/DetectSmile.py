@@ -138,7 +138,9 @@ def DetectSMILE(image):
             Y_bot = math.floor(face_landmarks.landmark[152].y * h)
             Y_top = math.floor(face_landmarks.landmark[10].y * h)
 
-            print(X_bot, X_top, Y_bot, Y_top)
+            center = [(Y_bot + Y_top) / 2, (X_bot + X_bot) / 2]
+            img_center = [image.shape[0] / 2, image.shape[1] / 2]
+            deviation = [center[0] - img_center[0], center[1] - img_center[1]]
 
             if ((Y_top > 0) and (Y_bot < image.shape[0])) and ((X_bot > 0) and (X_top < image.shape[1])):
 
@@ -275,4 +277,4 @@ def DetectSMILE(image):
                 pred = int(torch.max(output,1)[1][0].to(torch.uint8))
                 """
 
-    return OUT, (X_bot, X_top, Y_bot, Y_top)
+    return OUT, deviation

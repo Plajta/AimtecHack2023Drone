@@ -11,21 +11,24 @@ import logging
 
 tello = Tello()
 #tello.LOGGER.setLevel(logging.DEBUG)
-run = True
 
 time.sleep(3)
 tello.connect(False)
 
 def videoRecorder():
-    while run:
+    while True:
         image = tello.get_frame_read().frame
 
-        OUT, (X_bot, X_top, Y_bot, Y_top) = DetectSmile.DetectSMILE(image)
+        OUT, deviation = DetectSmile.DetectSMILE(image)
         led_matrix.light_metrix(tello, OUT)
 
-        # some motor controlling xD
-        #
-        #
+        #compute how to rotate
+        #convert pixels to degrees
+        #dev_to_deg_Y = (deviation[0] / image.shape[0]) * 180
+        dev_to_deg_X = (deviation[1] / image.shape[1]) * 180
+
+        if dev_to_deg_X < 0: tello.rotate_clockwise(dev_to_deg_X)
+        else: tello.rotate_counter_clockwise(-dev_to_deg_X)
 
         cv2.imshow("output", OUT)
         if cv2.waitKey(1) == ord('q'):
