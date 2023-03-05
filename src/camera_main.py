@@ -1,78 +1,8 @@
 import cv2
-import mediapipe as mp
 import numpy as np
-import math
-import os
-import time
-
-#neural network things (Not used)
-#import process_dataset
-#import Model
-
-#Mediapipe setup
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
-mp_face_mesh = mp.solutions.face_mesh
-
-#via canonical_face_model_uv_visualization.png
-face_landmarks_lower = [78, 95, 88, 178, 87, 14, 317, 405, 318, 324, 308]
-face_landmarks_upper = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308]
-
-#Pytorch setup
-#SMILENet = torch.load(os.getcwd() + "/Best_models/SMILENet0.pth") #best model yet
-
-def DrawSmile(arr_y, arr_x, col, blank):
-    for i in range(arr_x.shape[0]):
-        cv2.circle(blank, (arr_x[i], arr_y[i]), radius=0, color=col, thickness=3)
-
-def JawComputations(jaw_arr):
-
-    jaw_arr_y = jaw_arr[:, 0]
-    jaw_arr_x = jaw_arr[:, 1]
-
-    y_min = np.amin(jaw_arr_y)
-    x_min = np.amin(jaw_arr_x)
-
-    y_max = np.amax(jaw_arr_y)
-    x_max = np.amax(jaw_arr_x)
-
-    #normalize data
-    jaw_arr_y = jaw_arr_y - (y_min - 1)
-    jaw_arr_x = jaw_arr_x - (x_min - 1)
-
-    #fit polynomial model
-    poly_model = np.poly1d(np.polyfit(jaw_arr_x, jaw_arr_y, 3))
-    
-    #apply polynomial model on y_min ... to ... y_max space
-    x_len = x_max - x_min
-    
-    space = np.arange(x_len)
-    y_space = np.floor(poly_model(space))
-
-    out_x = space + x_min
-    out_y = y_space + y_min
-
-    return out_y.astype("uint32"), out_x.astype("uint32")
 
 
-#variables:
-roi_size = 160
-val_buffer1, val_buffer2 = [], []
-val_buffer_out1 = 0
-val_buffer_out2 = 0
-deviation = []
-
-
-drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
-cap = cv2.VideoCapture(0)
-
-face_mesh = mp_face_mesh.FaceMesh(
-            max_num_faces=1,
-            refine_landmarks=True,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5)
-
-
+while 
 def DetectSMILE(image):
     global deviation
     image = cv2.flip(image, 1)

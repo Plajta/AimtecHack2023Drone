@@ -4,10 +4,12 @@ from numpy._typing import NDArray
 
 COLORS = {0: "b", 1: "p", 2: "r"}
 
+
 def light_metrix(tello: Tello, image: NDArray) -> str:
     
     if image.shape != (8,8,3):
         raise SyntaxError
+    out = ""
 
     for row in image:
         for pix in row:

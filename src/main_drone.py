@@ -16,6 +16,7 @@ time.sleep(3)
 tello.connect()
 tello.streamon()
 frame_read = tello.get_frame_read()
+deviation = None
 
 def videoRecorder():
     while True:
