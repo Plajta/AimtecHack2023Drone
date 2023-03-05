@@ -2,13 +2,12 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import math
-import torch
 import os
 import time
 
-#neural network things
-import process_dataset
-import Model
+#neural network things (Not used)
+#import process_dataset
+#import Model
 
 #Mediapipe setup
 mp_drawing = mp.solutions.drawing_utils

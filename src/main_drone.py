@@ -10,8 +10,11 @@ import led_matrix
 import logging
 
 tello = Tello()
-tello.LOGGER.setLevel(logging.DEBUG)
+#tello.LOGGER.setLevel(logging.DEBUG)
 run = True
+
+time.sleep(3)
+tello.connect(False)
 
 def videoRecorder():
     while run:
@@ -29,10 +32,6 @@ def videoRecorder():
             led_matrix.clear_metrix(tello)
             run = False
             break
-
-tello = Tello()
-time.sleep(3)
-tello.connect(False)
 
 tello.streamon()
 
