@@ -26,7 +26,7 @@ def RunSMILENet():
     torch.save(model, os.getcwd() + "/model/SMILENet" + str(model.model_iter) + ".pth")
 
     model.model_iter += 1
-    #model.Table_validate(test, Wandb.wandb, [1, 2, 3]) does not work <- update
+    model.Table_validate(test, Wandb.wandb, [1, 2, 3])
     Wandb.End()
 
 #actual Run

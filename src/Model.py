@@ -136,6 +136,9 @@ class SmileNet(nn.Module):
             for i in indexes:
                 img = test_features[i].squeeze()
                 label = test_labels[i]
+                for i, lab in enumerate(label):
+                    if lab == 1:
+                        label = i
 
                 output = self.model(test_features[i]) #detect
                 pred = int(output.data.max(1, keepdim=True)[1][0][0].tolist())
