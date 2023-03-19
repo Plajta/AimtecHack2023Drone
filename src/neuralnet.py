@@ -3,12 +3,16 @@ import torch
 import Model
 import process_dataset
 import os
+import numpy as np
 
 #setup
 train, test = process_dataset.Load_Dataset()
 
 model = Model.SmileNet().to(Model.device)
 model.Model_init()
+
+#random index array for table validation
+arr = np.random.randint(1, 31, 10).tolist()
 
 def RunSMILENet():
     #basically a CNN
@@ -26,7 +30,7 @@ def RunSMILENet():
     torch.save(model, os.getcwd() + "/model/SMILENet" + str(model.model_iter) + ".pth")
 
     model.model_iter += 1
-    model.Table_validate(test, Wandb.wandb, [1, 2, 3])
+    model.Table_validate(test, Wandb.wandb, arr)
     Wandb.End()
 
 #actual Run

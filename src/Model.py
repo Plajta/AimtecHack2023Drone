@@ -68,8 +68,8 @@ class SmileNet(nn.Module):
         
         x = flatten(x, 1)
         x = self.dropout(x)
-        x = F.selu(self.layer1(x))
-        pred = F.softmax(self.layer2(x), dim=1)
+        pred = F.selu(self.layer1(x))
+        #pred = F.softmax(self.layer2(x), dim=1)
         return pred
 
     def Train(self, epoch, train, wandb):
